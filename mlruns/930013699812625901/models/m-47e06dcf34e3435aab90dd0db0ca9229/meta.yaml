@@ -1,0 +1,10 @@
+artifact_location: file:///D:/DE_Project/mlflow_learning/mlruns/930013699812625901/models/m-47e06dcf34e3435aab90dd0db0ca9229/artifacts
+creation_timestamp: 1753414179505
+experiment_id: '930013699812625901'
+last_updated_timestamp: 1753414183601
+model_id: m-47e06dcf34e3435aab90dd0db0ca9229
+model_type: null
+name: mymodel
+source_run_id: 1e4270d4ce1345d5ac2c261d2bf92135
+status: 2
+status_message: null

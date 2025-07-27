@@ -1,0 +1,14 @@
+artifact_uri: file:///D:/DE_Project/mlflow_learning/mlruns/930013699812625901/1e4270d4ce1345d5ac2c261d2bf92135/artifacts
+end_time: 1753414183615
+entry_point_name: ''
+experiment_id: '930013699812625901'
+lifecycle_stage: active
+run_id: 1e4270d4ce1345d5ac2c261d2bf92135
+run_name: intelligent-fish-5
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1753414179408
+status: 3
+tags: []
+user_id: Chi-Hao Sheng

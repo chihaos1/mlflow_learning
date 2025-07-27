@@ -1,0 +1,14 @@
+artifact_uri: file:///D:/DE_Project/mlflow_learning/mlruns/530072707633422681/9b70a7c5dee64741899a86b9828dab1c/artifacts
+end_time: 1753508706191
+entry_point_name: ''
+experiment_id: '530072707633422681'
+lifecycle_stage: active
+run_id: 9b70a7c5dee64741899a86b9828dab1c
+run_name: casual-midge-406
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1753508706081
+status: 3
+tags: []
+user_id: Chi-Hao Sheng
