@@ -1,7 +1,6 @@
 import warnings
 import argparse
 import logging
-import mlflow.sklearn
 import pandas as pd
 import numpy as np
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
@@ -10,21 +9,20 @@ from sklearn.linear_model import ElasticNet
 import mlflow
 import mlflow.sklearn
 from pathlib import Path
-
 import os
 from mlflow.models.signature import ModelSignature, infer_signature
-from mlflow.types.schema import Schema, ColSpec
+from mlflow.types.schema import Schema,ColSpec
 
 logging.basicConfig(level=logging.WARN)
 logger = logging.getLogger(__name__)
 
-#get arguments from command
+# get arguments from command
 parser = argparse.ArgumentParser()
-parser.add_argument("--alpha", type=float, required=False, default=0.5)
-parser.add_argument("--l1_ratio", type=float, required=False, default=0.5)
+parser.add_argument("--alpha", type=float, required=False, default=0.7)
+parser.add_argument("--l1_ratio", type=float, required=False, default=0.7)
 args = parser.parse_args()
 
-#evaluation function
+# evaluation function
 def eval_metrics(actual, pred):
     rmse = np.sqrt(mean_squared_error(actual, pred))
     mae = mean_absolute_error(actual, pred)
@@ -36,17 +34,14 @@ if __name__ == "__main__":
     warnings.filterwarnings("ignore")
     np.random.seed(40)
 
-    os.makedirs("data/", exist_ok=True)
-    # Read the wine-quality csv file from local
+    # Read the wine-quality csv file from the URL
     data = pd.read_csv("red-wine-quality.csv")
+    #os.mkdir("data/")
     data.to_csv("data/red-wine-quality.csv", index=False)
-
     # Split the data into training and test sets. (0.75, 0.25) split.
     train, test = train_test_split(data)
     train.to_csv("data/train.csv")
     test.to_csv("data/test.csv")
-
-
     # The predicted column is "quality" which is a scalar from [3, 9]
     train_x = train.drop(["quality"], axis=1)
     test_x = test.drop(["quality"], axis=1)
@@ -57,18 +52,10 @@ if __name__ == "__main__":
     l1_ratio = args.l1_ratio
 
     mlflow.set_tracking_uri(uri="")
+
     print("The set tracking uri is ", mlflow.get_tracking_uri())
-    exp = mlflow.set_experiment(experiment_name="experiment_autolog")
-
-    # exp_id = mlflow.create_experiment(
-    #     name="exp_create_exp_artifact",
-    #     tags={"version": "v1", "priority": "p1"},
-    #     artifact_location=Path.cwd().joinpath("myartifacts").as_uri()
-    # )
-
-
-    #####SHOULD BE USED WITH CREATE_EXPERIMENT
-    # get_exp = mlflow.get_experiment(exp_id)
+    exp = mlflow.set_experiment(experiment_name="experiment_signature")
+    #get_exp = mlflow.get_experiment(exp_id)
 
     print("Name: {}".format(exp.name))
     print("Experiment_id: {}".format(exp.experiment_id))
@@ -77,24 +64,21 @@ if __name__ == "__main__":
     print("Lifecycle_stage: {}".format(exp.lifecycle_stage))
     print("Creation timestamp: {}".format(exp.creation_time))
 
-    # mlflow.set_tag("release.version", "0.1")
     mlflow.start_run()
     tags = {
         "engineering": "ML platform",
-        "release.candidate": "RC1",
+        "release.candidate":"RC1",
         "release.version": "2.0"
     }
-    mlflow.set_tags(tags)
-    # mlflow.sklearn.autolog(
-    #     log_input_examples=True
-    # )
-    mlflow.autolog( #Autolog needs to be before fit
-        log_input_examples=True,
 
+
+    mlflow.set_tags(tags)
+    mlflow.sklearn.autolog(
+        log_input_examples=False,
+        log_model_signatures=False,
+        log_models=False
     )
-    # with mlflow.start_run(experiment_id=exp.experiment_id, run_name="run_1"):
     lr = ElasticNet(alpha=alpha, l1_ratio=l1_ratio, random_state=42)
-    
     lr.fit(train_x, train_y)
 
     predicted_qualities = lr.predict(test_x)
@@ -121,26 +105,30 @@ if __name__ == "__main__":
         {"name": "quality", "type": "double"}
     ]
 
-    # params = {
-    #     "alpha": alpha,
-    #     "l1_ratio": l1_ratio
-    # }
-    # mlflow.log_params(params)
+    output_data = [{'type': 'long'}]
 
-    # metrics = {
-    #     "rmse":rmse,
-    #     "r2":r2,
-    #     "mae":mae
-    # }
-    # mlflow.log_metrics(metrics)
+    input_schema = Schema([ColSpec(col["type"], col['name']) for col in input_data])
+    output_schema = Schema([ColSpec(col['type']) for col in output_data])
 
-    # mlflow.log_artifact('red-wine-quality.csv') #Will store in artifact directory
-    
-    #log model
-    # mlflow.sklearn.log_model(lr, "mymodel") #Determines the artfiact 
-    mlflow.log_artifacts("data/") #Will store the files in data folder to artifact
-    artifacts_uri = mlflow.get_artifact_uri()
+    signature = ModelSignature(inputs=input_schema, outputs=output_schema)
 
+    input_example = {
+        "fixed acidity": np.array([7.2, 7.5, 7.0, 6.8, 6.9]),
+        "volatile acidity": np.array([0.35, 0.3, 0.28, 0.38, 0.25]),
+        "citric acid": np.array([0.45, 0.5, 0.55, 0.4, 0.42]),
+        "residual sugar": np.array([8.5, 9.0, 8.2, 7.8, 8.1]),
+        "chlorides": np.array([0.045, 0.04, 0.035, 0.05, 0.042]),
+        "free sulfur dioxide": np.array([30, 35, 40, 28, 32]),
+        "total sulfur dioxide": np.array([120, 125, 130, 115, 110]),
+        "density": np.array([0.997, 0.996, 0.995, 0.998, 0.994]),
+        "pH": np.array([3.2, 3.1, 3.0, 3.3, 3.2]),
+        "sulphates": np.array([0.65, 0.7, 0.68, 0.72, 0.62]),
+        "alcohol": np.array([9.2, 9.5, 9.0, 9.8, 9.4]),
+        "quality": np.array([6, 7, 6, 8, 7])
+    }
+    mlflow.log_artifact("red-wine-quality.csv")
+    mlflow.sklearn.log_model(lr, "model", signature=signature, input_example=input_example)
+    artifacts_uri=mlflow.get_artifact_uri()
     print("The artifact path is",artifacts_uri )
     mlflow.end_run()
     run = mlflow.last_active_run()
